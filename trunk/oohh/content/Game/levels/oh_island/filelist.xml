@@ -1,0 +1,6 @@
+<download name="oh_island" type="Map">
+ <index src="filelist.xml" dest="filelist.xml"/>
+ <files>
+  <file src="level.pak" dest="level.pak" size="2847107" md5="cebf50046cd85501fd20dd87fbbb95c5"/>
+ </files>
+</download>
