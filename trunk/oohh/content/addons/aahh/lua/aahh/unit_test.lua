@@ -91,19 +91,6 @@ console.AddCommand("aahh_unit_test", function()
 
 	tabs:SelectTab("properties")
 	frame:RequestLayout(true)
-
-	event.AddListener("PostDrawMenu", 1, function()
-		graphics.DrawFilledRect(Rect(5,5,20,20), Color(1,0,0,0.5))
-		render.SetState(
-			bit.bor(
-				e.GS_NODEPTHTEST,
-				e.GS_STENCIL
-			)
-		)
-		graphics.DisableFlags(true) 
-		graphics.DrawFilledRect(Rect(0,0,50,50), Color(1,0,0,0.5))
-		graphics.DisableFlags(false) 
-	end)
 end)
 
 utilities.MonitorFileInclude()

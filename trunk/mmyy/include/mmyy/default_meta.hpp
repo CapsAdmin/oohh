@@ -11,7 +11,7 @@ namespace default_meta
 		auto name = my_getmetaname(L, 1);
 		auto id = my_getuniqueid(L, 1);
 
-		lua_pushfstring(L, "[%s][%li]", name, id);
+		lua_pushfstring(L, "[%s][%d]", name, id);
 
 		return 1;
 	}
