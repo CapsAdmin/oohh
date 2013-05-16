@@ -173,6 +173,27 @@ do -- printing
 				Msg(out)
 			end
 		end
+	else
+		local suppress_print = false
+
+		local function on_print(...)
+			if suppress_print then return end
+			
+			if event then 
+				suppress_print = true
+				
+				if event.Call("OnPrint", table.concat({tostring_args(...)}, ", ")) == false then
+					suppress_print = false
+					return false
+				end
+				
+				suppress_print = false
+			end
+			
+			return true
+		end
+		
+		print = function(...) if on_print(...) then return Msg(...) end end
 	end
 
 	function tostring_args(...)

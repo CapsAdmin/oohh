@@ -55,6 +55,7 @@ luasocket.debug = true
 	SERVER:OnClientError(client, msg)
 
 	SERVER:GetClients()
+	SERVER:HasClients() -- returns true if someone is connected, false otherwise
 --
 
 -- shared
@@ -258,6 +259,7 @@ do -- tcp socket meta
 			end
 
 			if sock.remove_me then
+				sock.socket:close()
 				setmetatable(sock, NULL)
 			end
 		end
@@ -292,7 +294,6 @@ do -- tcp socket meta
 	end
 
 	local function remove_socket(self)
-		self.socket:close()
 		self.remove_me = true
 	end
 
@@ -321,6 +322,9 @@ do -- tcp socket meta
 	do -- client
 		local CLIENT = {}
 		CLIENT.__index = CLIENT
+		
+		CLIENT.Type = "socket"
+		CLIENT.ClassName = "client"
 
 		add_options(CLIENT)
 
@@ -467,7 +471,7 @@ do -- tcp socket meta
 				if not data and partial and partial ~= "" then
 					data = partial
 				end
-
+				
 				if data then
 					self:DebugPrintf("received (mode %s) %q", mode, data)
 
@@ -546,6 +550,9 @@ do -- tcp socket meta
 		function CLIENT:Remove()
 			self:DebugPrintf("removed")
 			self:OnClose()
+			if self.__server then 
+				self.__server:OnClientClosed(self) 
+			end
 			remove_socket(self)
 		end
 
@@ -591,6 +598,9 @@ do -- tcp socket meta
 		local SERVER = {}
 		SERVER.__index = SERVER
 
+		SERVER.Type = "socket"
+		SERVER.ClassName = "server"
+		
 		add_options(SERVER)
 
 		function SERVER:Initialize()
@@ -617,6 +627,10 @@ do -- tcp socket meta
 			end
 
 			return copy
+		end
+		
+		function SERVER:HasClients()
+			return next(self.Clients) ~= nil
 		end
 
 		function SERVER:Host(ip, port)
@@ -718,13 +732,14 @@ do -- tcp socket meta
 					
 					self:DebugPrintf("%s connected", client)
 					
+					table.insert(self.Clients, client)
+					client.__server = self
+					
 					local b = self:OnClientConnected(client, client:GetIP(), client:GetPort())
 
 					if b == true then
 						client:SetKeepAlive(true)
 						client:SetTimeout()
-						table.insert(self.Clients, client)
-						client.__server = self
 					elseif b == false then
 						client:Remove()
 					end
