@@ -360,8 +360,16 @@ LUAMTA_FUNCTION(device, Close)
 
 	devices[device->output ? 1 : 0][device->id] = nullptr;
 
+	my->MakeNull(device);
+
 	return 0;
 }
+
+LUAMTA_FUNCTION(device, __gc)
+{
+	return lualib_device_Close(L);
+}
+
 
 LUAMTA_FUNCTION(device, Send)
 {

@@ -14,22 +14,8 @@
 
 static bool supress = false;
 
-void my_suppress_lock()
-{
-	supress = true;
-}
-
-void my_allow_lock()
-{
-	supress = false;
-}
-
-Concurrency::details::_ReentrantBlockingLock lock;
-
 const char *my_call(lua_State *L, int arguments, int results)
 {
-	Concurrency::details::_ReentrantBlockingLock::_Scoped_lock slock(lock);
-
 	if (!lua_isfunction(L, -(arguments+1)))
 	{
 		return "tried to call a non function";

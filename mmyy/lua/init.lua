@@ -158,31 +158,27 @@ do -- makes require work from current directory like gmod's include
 		
 		return func, err
 	end)
-	
-	old_dofile = old_dofile or dofile
-	
+		
 	function dofile(path, ...)
 		local func, err
 		
-		if not func then func, err = try_find(path, old_dofile, 3) end
+		if not func then func, err = try_find(path, _OLD_G.dofile, 3) end
 		if not func then func, err = try_relative(path, 3) end
 		if not func then func, err = try_libraries(path) end
 		if not func then func, err = try_addons(path) end
 		if not func then func, err = loadfile(path) end
 	
 		if not func then
-			print(err)
+			print(err)			
+		else			
+			local args = {pcall(func, ...)}
 			
-			return
+			if not args[1] then
+				print(args[2])
+			else
+				return select(2, unpack(args))
+			end
 		end
-		
-		local args = {pcall(func, ...)}
-		
-		if not args[1] then
-			print(args[2])
-		end
-		
-		return select(2, unpack(args))
 	end
 end
 
@@ -218,6 +214,25 @@ dofile("platforms/standard/meta/function.lua")
 
 -- extra libraries
 ffi = require("ffi")
+_G[ffi.os:upper()] = true
+_G[ffi.arch:upper()] = true
+
+do -- ffi's cdef is so anti realtime
+	ffi.already_defined = {}
+	old_ffi_cdef = old_ffi_cdef or ffi.cdef
+	
+	ffi.cdef = function(str, ...)
+		local val = ffi.already_defined[str]
+		
+		if val then
+			return val
+		end
+	
+		ffi.already_defined[str] = str
+		return old_ffi_cdef(str, ...)
+	end
+end
+
 event = dofile("event")
 utilities = dofile("utilities")
 dofile("null")
@@ -227,7 +242,6 @@ class = dofile("class")
 luadata = dofile("luadata")
 timer = dofile("timer")
 sigh = dofile("sigh")
-lpeg = require("lpeg")
 base64 = dofile("base64")
 input = dofile("input")
 msgpack = dofile("msgpack")
@@ -239,6 +253,7 @@ dofile("platforms/standard/libraries/luasocket/mime.lua")
 
 luasocket = dofile("luasocket") 
 intermsg = dofile("intermsg") 
+mmyy = dofile("mmyy")
 timer.Create("socket_think", 0,0, luasocket.Update)
 event.AddListener("LuaClose", "luasocket", luasocket.Panic)
 --
@@ -311,5 +326,31 @@ MsgN("loading addons")
 MsgN("sucessfully loaded addons (took " .. (os.clock() - time) .. " ms)")
 
 MsgN("sucessfully initialized (took " .. (os.clock() - gtime) .. " ms)")
+
+
+if CREATED_ENV then
+	mmyy.SetWindowTitle(TITLE)
+	
+	utilities.SafeRemove(ENV_SOCKET)
+	
+	ENV_SOCKET = luasocket.Client()
+
+	ENV_SOCKET:Connect("localhost", PORT)	
+	ENV_SOCKET:SetTimeout()
+	
+	ENV_SOCKET.OnReceive = function(self, line)		
+		local func, msg = loadstring(line)
+		if func then
+			local ok, msg = pcall(func) 
+			if not ok then
+				print("runtime error:", client, msg)
+			end
+		else
+			print("compile error:", client, msg)
+		end
+		
+		timer.Simple(0.1, function() event.Call("OnConsoleEnvReceive", line) end)
+	end
+end
 
 event.Call("Initialized")

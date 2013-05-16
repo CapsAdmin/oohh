@@ -11,6 +11,14 @@ IAudioClient* client;
 IAudioRenderClient* render;
 WAVEFORMATEX* format;
 UINT32 buffer;
+DWORD sample_rate = -1;
+
+LUALIB_FUNCTION(rawaudio, GetSampleRate)
+{
+	my->Push(sample_rate);
+
+	return 1;
+}
 
 LUALIB_FUNCTION(rawaudio, Open)
 {
@@ -41,7 +49,7 @@ LUALIB_FUNCTION(rawaudio, Open)
 
 				client->Start();
 
-				my->Push((double)format->nSamplesPerSec);
+				sample_rate = format->nSamplesPerSec;
 			}
 		}
 	}

@@ -19,9 +19,7 @@ LUALIB_FUNCTION(awesomium, Open)
 		core = Awesomium::WebCore::Initialize(config);
 	}
 
-	my_suppress_lock();
 	my->RunString("event.AddListener(\"PostGameUpdate\", \"awesomium\", function() awesomium.Update() end, print)");
-	my_allow_lock();
 	return 0;
 }
 
@@ -360,11 +358,26 @@ public:
 		);
 	}
 
-	void OnAddConsoleMessage(Awesomium::WebView* caller, const Awesomium::WebString& message, int line_number, const Awesomium::WebString& source)
+	void OnAddConsoleMessage(
+		Awesomium::WebView* caller, 
+		const Awesomium::WebString& message, 
+		int line_number, 
+		const Awesomium::WebString& source
+	)
 	{
-
+		my->CallEntityHook(
+			caller, 
+			"OnAddConsoleMessage",
+			tostring(message),
+			line_number,
+			tostring(source)
+			);
 	}
-	void OnShowPageInfoDialog(Awesomium::WebView* caller, const Awesomium::WebPageInfo& page_info) 
+
+	void OnShowPageInfoDialog(
+			Awesomium::WebView* caller, 
+			const Awesomium::WebPageInfo& page_info
+		) 
 	{
 	
 	}
@@ -379,6 +392,8 @@ using namespace Awesomium;
 
 LUALIB_FUNCTION(_G, WebView)
 {
+	if (!core) return 0;
+
 	WebPreferences params;
 	params.enable_web_gl = true;
 	params.enable_web_audio = true;
@@ -507,14 +522,14 @@ LUAMTA_FUNCTION(webview, ExecuteJavascriptWithResult)
 	
 	my->Push(ToString(val.ToString()).c_str());
 
-	return 0;
+	return 1;
 }
 
-LUAMTA_FUNCTION(webview, GetAudioBuffer)
+LUAMTA_FUNCTION(webview, ExecuteJavascript)
 {
-	/*auto val = my->ToWebView(1)->session()->preferences().
-	
-	my->Push(ToString(val.ToString()).c_str());*/
+	auto self = my->ToWebView(1);
+
+	self->ExecuteJavascript(WSLit(my->ToString(2)), WSLit(my->ToString(2, "")));
 
 	return 0;
 }

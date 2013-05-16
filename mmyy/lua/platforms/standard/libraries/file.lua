@@ -2,6 +2,14 @@ local file = require("lfs") or {}
 
 file.base_dir = e.BASE_FOLDER
 
+local function handle_path(path)
+	if path:find("^%a:/") then
+		return path
+	end
+	
+	return file.base_dir .. path
+end
+
 local function SafeClose(fil)
 	if fil and io.type(fil) == "file" then
 		io.close(fil)
@@ -14,7 +22,7 @@ function file.Read(path, mode)
 	check(mode, "string")
 	
 	path = event.Call("HandleFileIOPath", path) or path
-	
+		
 	local fil, msg
 	
 	if path == "stdout" then
@@ -22,7 +30,7 @@ function file.Read(path, mode)
 	elseif path == "stdin" then
 		fil = io.stdin
 	else
-		fil, err = io.open(file.base_dir .. path, "r" .. mode)
+		fil, err = io.open(handle_path(path), "r" .. mode)
 	end
 
 	if err then
@@ -51,7 +59,7 @@ function file.Write(path, content, mode)
 	elseif path == "stdin" then
 		fil = io.stdin
 	else
-		fil, err = io.open(file.base_dir .. path, "w" .. mode)
+		fil, err = io.open(handle_path(path), "w" .. mode)
 	end
 	
 	if err and err:findsimple("No such file or directory") then
@@ -71,7 +79,7 @@ function file.Exists(path)
 	
 	path = event.Call("HandleFileIOPath", path) or path
 	
-	local fil, msg = io.open(file.base_dir .. path, "r")
+	local fil, msg = io.open(handle_path(path), "r")
 	
 	local bool = fil ~= nil
 
@@ -86,7 +94,7 @@ function file.Rename(path, new)
 	
 	path = event.Call("HandleFileIOPath", path) or path
 
-	return os.rename(file.base_dir .. path, new)
+	return os.rename(handle_path(path), new)
 end
 
 function file.Delete(path)
@@ -94,7 +102,7 @@ function file.Delete(path)
 	
 	path = event.Call("HandleFileIOPath", path) or path
 
-	return os.remove(file.base_dir .. path)
+	return os.remove(handle_path(path))
 end
 
 function file.CreateFoldersFromPath(path)

@@ -37,5 +37,3 @@ inline void my_remove(lua_State *L, int idx, int times = 1)
 }
 
 const char *my_call(lua_State *L, int arguments, int results);
-void my_suppress_lock();
-void my_allow_lock();

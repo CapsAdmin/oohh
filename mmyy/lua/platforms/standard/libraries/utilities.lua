@@ -1,5 +1,22 @@
 local utilities = _G.utilities or {}
 
+function utilities.SafeRemove(obj, gc)
+	if hasindex(obj) then
+		
+		if obj.IsValid and not obj:IsValid() then return end
+		
+		if type(obj.Remove) == "function" then
+			obj:Remove()
+		elseif type(obj.Close) == "function" then
+			obj:Close()
+		end
+		
+		if gc and type(obj.__gc) == "function" then
+			obj:__gc()
+		end
+	end
+end
+
 function utilities.RemoveOldObject(obj, id)
 	
 	if hasindex(obj) and type(obj.Remove) == "function" then
@@ -140,14 +157,14 @@ function utilities.MonitorFileInclude(source, target)
 	source = source or utilities.GetCurrentPath(3)
 	target = target or source
 
-	--printf("monitoring %s", source)
-	--printf("to reload %s", target)
+	printf("monitoring %s", source)
+	printf("to reload %s", target)
 	
 	utilities.MonitorFile(source, function()
 		timer.Simple(0, function()
 			dofile(target)
 		end)
-	return end)
+	end)
 end
 
 function utilities.MakeNULL(var)
