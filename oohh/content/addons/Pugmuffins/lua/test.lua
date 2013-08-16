@@ -19,4 +19,4 @@ CRYSTAL:SetMaterial(mat);
 CRYSTAL:SetScale(Vec3(1, 1, 1) * 0.25)
 print(mat:GetName())
 
-utilities.MonitorFileInclude();
+;

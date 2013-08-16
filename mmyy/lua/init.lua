@@ -1,8 +1,10 @@
 -- enums
-_E = {}
-e = _E
+_E = _E or {}
+e = _E 
 
-_E.MMYY_PLATFORM = MMYY_PLATFORM or tostring(select(1, ...) or nil)
+_E.PLATFORM = PLATFORM or tostring(select(1, ...) or nil)
+_E.USERNAME = tostring(os.getenv("USERNAME") or os.getenv("USER")):upper():gsub(" ", "_"):gsub("%p", "")
+_G[e.USERNAME] = true
 
 do -- helper constants	
 	_G._F = {}
@@ -25,7 +27,7 @@ do -- helper constants
 	do -- example
 		_F["T"] = os.clock
 		
-		-- print(T + 1) = print(os.clock() + 1)
+		-- logn(T + 1) = logn(os.clock() + 1)
 	end
 end
 
@@ -53,280 +55,422 @@ if not _OLD_G then
 	scan(_G, _OLD_G)
 end
 
-Msg = Msg or print
-MsgN = MsgN or print
-
-local time = os.clock()
-local gtime = time
-
-MsgN("loading mmyy")
-
-_E.USERNAME = tostring(os.getenv("USERNAME")):upper():gsub(" ", "_"):gsub("%p", "")
-_G[e.USERNAME] = true
-
-MsgN("username constant = " .. e.USERNAME)
-
-_E.LUA_FOLDER = debug.getinfo(1).source:match("@(.+/)"):gsub("\\", "//")
-_E.BASE_FOLDER = e.LUA_FOLDER:match("(.-)lua/")
-
-MsgN("lua folder = " .. e.LUA_FOLDER)
-MsgN("base folder = " .. e.BASE_FOLDER)
-
-do -- makes require work from current directory like gmod's include
-	local function load(path) 
-		local func, err = loadfile(path) 
-		if err and not err:find("No such file or directory") then 
-			return nil, err
-		end 
+do -- logging	
+	local pretty_prints = {}
+	
+	pretty_prints.table = function(t)
+		local str = tostring(t)
+				
+		str = str .. " [" .. table.count(t) .. " subtables]"
 		
-		return func 
+		-- guessing the location of a library
+		local sources = {}
+		for k,v in pairs(t) do	
+			if type(v) == "function" then
+				local src = debug.getinfo(v).short_src
+				sources[src] = (sources[src] or 0) + 1
+			end
+		end
+		
+		local tmp = {}
+		for k,v in pairs(sources) do
+			table.insert(tmp, {k=k,v=v})
+		end
+		
+		table.sort(tmp, function(a,b) return a.v > b.v end)
+		if #tmp > 0 then 
+			str = str .. "[" .. tmp[1].k:gsub("!/%.%./", "") .. "]"
+		end
+		
+		
+		return str
 	end
 	
-	local function try_relative(path, level)
-		level = level or 4
-		local func = load(path) -- utilities.lua
+	local function tostringx(val)
+		local t = type(val)
+		return pretty_prints[t] and pretty_prints[t](val) or tostring(val)
+	end
+
+	local function tostring_args(...)
+		local copy = {}
+		
+		for i = 1, select("#", ...) do
+			table.insert(copy, tostringx(select(i, ...)))
+		end
+		
+		return copy
+	end
+
+	local function safeformat(str, ...)
+		local count = select(2, str:gsub("(%%)", ""))
+		local copy = {}
+		for i = 1, count do
+			table.insert(copy, tostringx(select(i, ...)))
+		end
+		return string.format(str, unpack(copy))
+	end
+		
+	local function get_verbosity_level()
+		return console and console.GetVariable("log_verbosity", 0) or 0
+	end
+	
+	local function get_debug_filter()
+		return console and console.GetVariable("log_debug_filter", "") or ""
+	end	
+	
+	local suppress_print = false
+
+	local function can_print(args)
+		if suppress_print then return end
+		
+		if event then 
+			suppress_print = true
+			
+			if event.Call("ConsolePrint", table.concat(args, ", ")) == false then
+				suppress_print = false
+				return false
+			end
+			
+			suppress_print = false
+		end
+		
+		return true
+	end
+		
+	local log_file
+	local buffer = {}
+	local last_line
+	local count = 0
+	local last_count_length = 0
+	
+	function log(...)
+		local args = tostring_args(...)
+		
+		if PLATFORM == "CRYENGINE3" then
+			CryPrintN(table.concat(args, ""))
+		end
+		
+		if can_print(args) then
+			
+			if vfs then
+				if not log_file then
+					log_file = io.open(e.BASE_FOLDER .. "log_" .. _E.USERNAME:lower() .. "_" .. jit.os:lower() .. ".txt", "w")
+					
+					if buffer then
+						for k,v in pairs(buffer) do
+							log_file:write(unpack(v))
+						end
+						
+						buffer = nil
+					end
+				end
+						
+				local line = table.concat(args, "")
+				
+				if line == last_line then
+					local count_str = ("[%i x] "):format(count)
+					log_file:seek("cur", -#line-1-last_count_length)
+					log_file:write(count_str, line)
+					count = count + 1
+					last_count_length = #count_str
+				else
+					log_file:write(line)
+					count = 0
+					last_count_length = 0
+				end
+				
+				log_file:flush()
+				
+				last_line = line
+			else
+				table.insert(buffer, args)
+			end
+			
+			io.write(unpack(args))
+		end
+	end
+	
+	function logn(...)
+		local args = {...}
+		table.insert(args, "\n")
+		return log(unpack(args))
+	end
+	
+	function print(...)
+		logn(table.concat(tostring_args(...), ",\t"))
+	end
+
+	function logf(str, ...)
+		logn(safeformat(str, ...))
+	end
+
+	function errorf(str, level, ...)
+		error(safeformat(str, ...), level)
+	end
+
+	function warning(verbosity, ...)
+		local level = get_verbosity_level()
+				
+		-- if verbosity is a string only show warnings log_debug_filter is set to
+		if type(verbosity) == "string" then
+			if verbosity == get_debug_filter() then
+				return log(...)
+			end
+		else
+			-- if the level is below 0 always log
+			if level < 0 then
+				return log(...)
+			end
+		
+			-- otherwise check the verbosity level against the input	
+			if level <= verbosity then
+				return log(...)
+			end
+		end
+	end	
+	
+	do
+		local last = {}
+	
+		function nospam_printf(str, ...)
+			local str = safeformat(str, unpack(tostring_args(...)))
+			local t = os.clock()
+			
+			if not last[str] or last[str] < t then
+				logn(str)
+				last[str] = t + 3
+			end
+		end
+		
+		function nospam_print(...)
+			nospam_printf(("%s "):rep(select("#", ...)), ...)
+		end
+	end
+end
+
+log("\n\n")
+log([[
+ _ __ ___  _ __ ___  _   _ _   _ 
+| '_ ` _ \| '_ ` _ \| | | | | | |
+| | | | | | | | | | | |_| | |_| |
+|_| |_| |_|_| |_| |_|\__, |\__, |
+                     |___/ |___/ 
+]])
+logf("launched on %s", os.date())
+logn("executed by " .. e.USERNAME)
+log("\n\n")
+
+do -- ffi
+	ffi = require("ffi")
+	_G[ffi.os:upper()] = true
+	_G[ffi.arch:upper()] = true
+
+	 -- ffi's cdef is so anti realtime
+	if not ffi.already_defined then
+		ffi.already_defined = {}
+		
+		old_ffi_cdef = old_ffi_cdef or ffi.cdef
+		ffi.cdef = function(str, ...)
+			local val = ffi.already_defined[str]
+			
+			if val then
+				return val
+			end
+		
+			ffi.already_defined[str] = str
+			return old_ffi_cdef(str, ...)
+		end
+			
+		ffi.already_defined_metatypes = {}
+			
+		old_ffi_metatype = old_ffi_metatype or ffi.metatype
+		ffi.metatype = function(str, ...)
+			local res = ffi.already_defined_metatypes[str] or old_ffi_metatype(str, ...)			
+			
+			ffi.already_defined_metatypes[str] = res
+			
+			return res
+		end
+	end
+end
+
+do -- file system
+	lfs = require("lfs")
+	
+	-- the base folder is always 3 paths up (bin/os/arch)
+	_E.BASE_FOLDER = "../../../" 
+	_E.ABSOLUTE_BASE_FOLDER = lfs.currentdir():gsub("\\", "/"):match("(.+/).-/.-/")
+
+	-- or not ..
+	if PLATFORM == "CRYENGINE3" then
+		_E.BASE_FOLDER = lfs.currentdir():gsub("\\", "/") .. "/"
+		_E.ABSOLUTE_BASE_FOLDER = _E.BASE_FOLDER
+	end	
+
+	-- this is ugly but it's because we haven't included the global extensions yet..
+	_G.check = function() end
+	vfs = dofile(_E.BASE_FOLDER .. "/lua/platforms/standard/libraries/vfs.lua")
+	
+	-- mount the current dir
+	vfs.Mount(_E.ABSOLUTE_BASE_FOLDER)
+	
+	-- and 3 folders up
+	vfs.Mount(_E.BASE_FOLDER)
+	
+	-- a nice global for loading resources externally from current dir
+	R = vfs.GetAbsolutePath
+
+	-- although vfs will add a loader for each mount, the module folder has to be an exception for modules only
+	-- this loader should support more ways of loading than just adding ".lua"
+	table.insert(package.loaders, function(path)
+		local func = vfs.loadfile("lua/modules/" .. path)
 		
 		if not func then
-			local dir = debug.getinfo(level).source:match("@(.+/)") or ""
-			func = load(dir .. path) -- *cd*path
-			if not func then
-				func = load(dir .. path .. ".lua") -- *cd*utilities.lua
-				
-				if not func then
-					return nil, "could not find " .. path
-				end
-			end
+			func = vfs.loadfile("lua/modules/" .. path .. ".lua")
 		end
 		
 		return func
-	end
-	
-	local function try_addons(path)
-		if addons and addons.HandleLoader then
-			path = "lua/" .. path
-			for _, path in ipairs(addons.HandleLoader(path)) do
-				local func = load(path)
-				if func then
-					return func
-				end
-			end
-		end
-		
-		return nil, "could not find " .. path
-	end
-	
-	local function try_find(path, func, level)
-		level = level or 4
-		
-		if utilities and file then
-			local pattern = utilities.GetFileNameFromPath(path)
-			if pattern == "*" then
-				if not file.FolderExists(path:sub(0, -3)) then
-					local dir = debug.getinfo(level).source:match("@!/../(.+/)") or ""
-					dir = dir:lower()
-					path = path:gsub(dir, "")
-					path = dir .. path
-				end
-				
-			
-				return function(...) 
-					for file_name in pairs(file.Find(path)) do
-						func(e.BASE_FOLDER .. path:sub(0, -2) .. file_name, ...)
-					end
-				end
-			end
-		end
-				
-		return nil, "could not find " .. path
-	end
-	
-	local function try_libraries(path)
-		return load(e.LUA_FOLDER .. "platforms/standard/libraries/" .. path .. ".lua")
-	end
-	
-	local function try_modules(path)
-		return load(e.LUA_FOLDER .. "platforms/standard/libraries/" .. path .. ".lua")
-	end
-	
-	table.insert(package.loaders, function(path)
-		local func, err
-		
-		if not func then func, err = try_find(path, require) end
-		if not func then func, err = try_relative(path) end
-		if not func then func, err = try_libraries(path) end
-		if not func then func, err = try_addons(path, require, 4) end
-		
-		return func, err
 	end)
-		
-	function dofile(path, ...)
-		local func, err
-		
-		if not func then func, err = try_find(path, _OLD_G.dofile, 3) end
-		if not func then func, err = try_relative(path, 3) end
-		if not func then func, err = try_libraries(path) end
-		if not func then func, err = try_addons(path) end
-		if not func then func, err = loadfile(path) end
+end
+
+do -- include
+	local base = lfs.currentdir()
+
+	local include_stack = {}
 	
-		if not func then
-			print(err)			
-		else			
-			local args = {pcall(func, ...)}
-			
-			if not args[1] then
-				print(args[2])
-			else
-				return select(2, unpack(args))
-			end
+	function include(path, ...)
+		local dir, file = path:match("(.+/)(.+)")
+		
+		if not dir then
+			dir = ""
+			file = path
 		end
+				
+		vfs.Silence(true)		
+		 
+		local previous_dir = include_stack[#include_stack]		
+		
+		if previous_dir then
+			dir = previous_dir .. dir
+		end
+		
+		--logn("")
+		--logn(("\t"):rep(#include_stack).."TRYING REL: ", dir .. file)
+		
+		local func, err = vfs.loadfile("lua/" .. dir .. file)
+		
+		if err then
+			func, err = vfs.loadfile("lua/" .. path)
+			
+			if err then		
+				func, err = vfs.loadfile(dir .. file)
+				
+				if err then
+					func, err = loadfile(path)
+					--logn(("\t"):rep(#include_stack).."TRYING ABS: ", dir .. file)
+				end
+			end
+		end		
+
+		if func then 
+			include_stack[#include_stack + 1] = dir
+		
+			--logn(("\t"):rep(#include_stack + 1).."FILE FOUND: ", file)
+			--logn(("\t"):rep(#include_stack + 1).."DIR IS NOW: ", dir)
+			--logn("")
+			local res = {xpcall(func, OnError or (function() end), ...)}
+			
+			if not res[1] then
+				logn(res[2])
+			end
+			
+			include_stack[#include_stack] = nil
+						 
+			return select(2, unpack(res))
+		end
+		
+		logn(path:sub(1) .. " " .. err)
+		
+		vfs.Silence(false)
+		
+		return false, err
 	end
 end
 
-do -- module loading from lua/modules/*platform*/*architecture*/?
-	local os = jit.os:lower()
-	local arch = jit.arch:lower()
-	local ext = 
-	{
-		windows = ".dll",
-		linux = ".so",
-	}
-		
-	local dir = ";" .. e.LUA_FOLDER .. "modules/" .. os .. "/" .. arch .. "/"
-	package.cpath = (package.cpath or "") .. dir .. "?" .. (ext[os] or "")
-	
-	package.path = (package.path or "") .. dir .. "?.lua"
-	package.path = package.path .. dir .. "?/init.lua"
-	
-	package.path = package.path .. ";" .. e.LUA_FOLDER .. "modules/?.lua"
-	package.path = package.path .. ";" .. e.LUA_FOLDER .. "modules/?/init.lua"
-end
+local standard = "platforms/standard/"
+local extensions = standard .. "extensions/"
+local libraries = standard .. "libraries/"
+local meta = standard .. "meta/"
 
 -- library extensions
-dofile("platforms/standard/extensions/globals.lua")
-dofile("platforms/standard/extensions/debug.lua")
-dofile("platforms/standard/extensions/math.lua")
-dofile("platforms/standard/extensions/string.lua")
-dofile("platforms/standard/extensions/table.lua")
-dofile("platforms/standard/extensions/os.lua")
+include(extensions .. "globals.lua")
+include(extensions .. "debug.lua")
+include(extensions .. "math.lua")
+include(extensions .. "string.lua")
+include(extensions .. "table.lua")
+include(extensions .. "os.lua")
 
--- meta additions/extensions
-dofile("platforms/standard/meta/function.lua")
+-- libraries
+structs = include(libraries .. "structs.lua")
 
--- extra libraries
-ffi = require("ffi")
-_G[ffi.os:upper()] = true
-_G[ffi.arch:upper()] = true
-
-do -- ffi's cdef is so anti realtime
-	ffi.already_defined = {}
-	old_ffi_cdef = old_ffi_cdef or ffi.cdef
-	
-	ffi.cdef = function(str, ...)
-		local val = ffi.already_defined[str]
-		
-		if val then
-			return val
-		end
-	
-		ffi.already_defined[str] = str
-		return old_ffi_cdef(str, ...)
-	end
+for script in vfs.Iterate("lua/structs/", nil, true) do
+	dofile(script)
 end
 
-event = dofile("event")
-utilities = dofile("utilities")
-dofile("null")
-file = dofile("file")
-addons = dofile("addons")
-class = dofile("class")
-luadata = dofile("luadata")
-timer = dofile("timer")
-sigh = dofile("sigh")
-base64 = dofile("base64")
-input = dofile("input")
-msgpack = dofile("msgpack")
-json = dofile("json")
+event = include(libraries .. "event.lua")
+utilities = include(libraries .. "utilities.lua")
+addons = include(libraries .. "addons.lua")
+class = include(libraries .. "class.lua")
+luadata = include(libraries .. "luadata.lua")
+timer = include(libraries .. "timer.lua")
+sigh = include(libraries .. "sigh.lua")
+base64 = include(libraries .. "base64.lua")
+input = include(libraries .. "input.lua")
+msgpack = include(libraries .. "msgpack.lua")
+json = include(libraries .. "json.lua")
+console = include(libraries .. "console.lua")
+mmyy = include(libraries .. "mmyy.lua")
+
+-- meta
+include(meta .. "function.lua")
+include(meta .. "null.lua")
 
 -- luasocket
-dofile("platforms/standard/libraries/luasocket/socket.lua")
-dofile("platforms/standard/libraries/luasocket/mime.lua")
-
-luasocket = dofile("luasocket") 
-intermsg = dofile("intermsg") 
-mmyy = dofile("mmyy")
+luasocket = include(libraries .. "luasocket.lua") 
 timer.Create("socket_think", 0,0, luasocket.Update)
 event.AddListener("LuaClose", "luasocket", luasocket.Panic)
---
-
-Path = function(path)
-
-	-- try relative
-	local dir = (debug.getinfo(2).source:match("@(.+/)") or ""):gsub(e.BASE_FOLDER, "") -- remove bin32 folder since the file lib handles that
-	local new_path = dir .. path
-	if file.Exists(new_path) then
-		return event.Call("HandleEnginePath", new_path) or new_path -- ask if the path needs to be redirected, such as the root being somewhere else
-	end
-		
-	-- try addons instead	
-	if addons and addons.HandleLoader then
-		for _, path in ipairs(addons.HandleLoader(path)) do
-			local new_path = path:gsub(e.BASE_FOLDER, "")
-			if file.Exists(new_path) then
-				local val = event.Call("HandleEnginePath", new_path)
-				if val then
-					return val
-				end
-			end
-		end
-	end
-	
-	-- return default if not found	
-	return path
-end
 
 -- this should be used for xpcall
 function OnError(msg)
 	if event.Call("OnLuaError", msg) == false then return end
 	
-	print("== LUA ERROR ==")
+	logn("== LUA ERROR ==")
 	
+	local base_folder = e.BASE_FOLDER:gsub("%p", "%%%1")
+		
 	for k, v in pairs(debug.traceback():explode("\n")) do
 		local source, msg = v:match("(.+): in function (.+)")
 		if source and msg then
-			print((k-1) .. "    " .. source:trim() or "nil")
-			print("     " .. msg:trim() or "nil")
-			print("")
+			logn((k-1), "    ",  msg:trim() or "nil", "(", source:gsub(base_folder, ""):trim() or "nil", ")")
 		end
 	end
-	
 
-	print("")
+	logn("")
 	local source, _msg = msg:match("(.+): (.+)")
 	if source then
-		print(source:trim())
-		print(_msg:trim())
+		logn(source:trim())
+		logn(_msg:trim())
 	else
-		print(msg)
+		logn(msg)
 	end
-	print("")
+	logn("")
 end
 
-MsgN("mmyy loaded (took " .. (os.clock() - time) .. " ms)")
+addons.LoadAll()
 
-local time = os.clock()
-MsgN("loading platform " .. e.MMYY_PLATFORM)
-dofile("platforms/".. e.MMYY_PLATFORM .."/init.lua")
-MsgN("sucessfully loaded platform " .. e.MMYY_PLATFORM .. " (took " .. (os.clock() - time) .. " ms)")
+include("platforms/".. e.PLATFORM .."/init.lua")
 
-
-local time = os.clock()
-MsgN("loading addons")
-	addons.LoadAll()
-	addons.AutorunAll(e.USERNAME)
-MsgN("sucessfully loaded addons (took " .. (os.clock() - time) .. " ms)")
-
-MsgN("sucessfully initialized (took " .. (os.clock() - gtime) .. " ms)")
-
+addons.AutorunAll(e.USERNAME)
 
 if CREATED_ENV then
 	mmyy.SetWindowTitle(TITLE)
@@ -340,17 +484,20 @@ if CREATED_ENV then
 	
 	ENV_SOCKET.OnReceive = function(self, line)		
 		local func, msg = loadstring(line)
+
 		if func then
-			local ok, msg = pcall(func) 
+			local ok, msg = xpcall(func, OnError) 
 			if not ok then
-				print("runtime error:", client, msg)
+				logn("runtime error:", client, msg)
 			end
 		else
-			print("compile error:", client, msg)
+			logn("compile error:", client, msg)
 		end
 		
-		timer.Simple(0.1, function() event.Call("OnConsoleEnvReceive", line) end)
-	end
+		timer.Simple(0, function() event.Call("OnConsoleEnvReceive", line) end)
+	end 
 end
+
+vfs.MonitorEverything(true) 
 
 event.Call("Initialized")

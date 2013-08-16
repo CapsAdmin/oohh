@@ -1,3 +1,4 @@
+local logf = function(fmt, ...) logn(string.format(fmt, ...)) end
 local class = {}
 
 class.Registered = {}
@@ -24,9 +25,7 @@ function class.GetSet(tbl, name, def)
 		tbl["Set" .. name] = tbl["Set" .. name] or function(self, var) self[name] = var end
 		tbl["Get" .. name] = tbl["Get" .. name] or function(self, var) return self[name] end
 	end
-	
-	tbl["__def" .. name] = def
-	
+		
     tbl[name] = def
 end
 
@@ -37,7 +36,7 @@ function class.IsSet(tbl, name, def)
 		tbl["Set" .. name] = tbl["Set" .. name] or function(self, var) self[name] = var end
 	end
     tbl["Is" .. name] = tbl["Is" .. name] or function(self, var) return self[name] end
-	tbl["__def" .. name] = def
+
     tbl[name] = def
 end
 
@@ -45,7 +44,7 @@ function class.RemoveField(tbl, name)
 	tbl["Set" .. name] = nil
     tbl["Get" .. name] = nil
     tbl["Is" .. name] = nil
-	tbl["__def" .. name] = nil
+
     tbl[name] = nil
 end
 
@@ -97,7 +96,7 @@ function class.Create(type_name, class_name)
     local META = class.Get(type_name, class_name)
 	
     if not META then
-        printf("tried to create unknown %s %q!", type or "no type", class_name or "no class")
+        logf("tried to create unknown %s %q!", type or "no type", class_name or "no class")
         return
     end
 	
@@ -122,11 +121,15 @@ function class.Create(type_name, class_name)
 			end
 		end
 	end
-	
+		
+	obj.MetaTable = META
+
 	setmetatable(obj, obj)
 	
 	return obj
 end
+
+class.Copy = table.copy
 
 do -- helpers
 	function class.SetupLib(tbl, type, base)
@@ -136,6 +139,10 @@ do -- helpers
 			local obj = class.Create(type, name, base)
 			
 			if not obj then return end
+					
+			if obj.__init then
+				obj:__init()
+			end
 					
 			if obj.Initialize then
 				obj:Initialize()
@@ -162,6 +169,10 @@ do -- helpers
 		META.OnParent = META.OnChildAdd or function() end
 		META.OnChildAdd = META.OnChildAdd or function() end
 		META.OnUnParent = META.OnUnParent or function() end
+		
+		class.GetSet(META, "Parent", NULL)
+		
+		META.Children = {}
 
 		function META:GetChildren()
 			return self.Children
@@ -185,7 +196,7 @@ do -- helpers
 		
 			var.Parent = self
 
-			if not table.HasValue(self.Children, var) then
+			if not table.hasvalue(self.Children, var) then
 				table.insert(self.Children, var)
 			end
 			
@@ -203,14 +214,14 @@ do -- helpers
 			end
 		end
 		
-		function PART:SortChildren()
+		function META:SortChildren()
 			local new = {}
 			for key, val in pairs(self.Children) do 
 				table.insert(new, val) 
 				val:SortChildren()
 			end
 			self.Children = new
-			table.sort(self.Children, sort)
+			--table.sort(self.Children, sort)
 		end
 
 		function META:HasParent()

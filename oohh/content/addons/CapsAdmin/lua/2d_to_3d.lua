@@ -36,4 +36,3 @@ event.AddListener("PostHUDUpdate", "2d3d", function()
 	--graphics.DisableFlags(false)
 end)
 
-utilities.MonitorFileInclude()

@@ -15,4 +15,3 @@ function ent:OnUpdate(delta, cam, frameid)
 	end, OnError))
 end
 
-utilities.MonitorFileInclude()

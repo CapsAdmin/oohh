@@ -38,13 +38,13 @@ console.AddCommand("aahh_unit_test", function()
 
 		local tab, pnl = tabs:AddTab("tree", "tree")
 			
-		local data = luadata.ReadFile(Path("well.txt"))
+		local data = luadata.ReadFile(R("well.txt"))
 		local done = {}
 		 
 		local function fill(tbl, node)		
 			for key, val in pairs(tbl.children) do
 				local node = node:AddNode(val.self.Name)
-				node:SetIcon(Texture(Path("textures/" .. icons[val.self.ClassName])))
+				node:SetIcon(Texture(R("textures/" .. icons[val.self.ClassName])))
 				fill(val, node)
 			end  
 			
@@ -52,7 +52,7 @@ console.AddCommand("aahh_unit_test", function()
 			 
 		for key, val in pairs(data) do
 			local node = pnl:AddNode(val.self.Name)
-			node:SetIcon(Texture(Path("textures/" .. icons[val.self.ClassName])))
+			node:SetIcon(Texture(R("textures/" .. icons[val.self.ClassName])))
 			fill(val, node)
 		end
 
@@ -93,4 +93,3 @@ console.AddCommand("aahh_unit_test", function()
 	frame:RequestLayout(true)
 end)
 
-utilities.MonitorFileInclude()

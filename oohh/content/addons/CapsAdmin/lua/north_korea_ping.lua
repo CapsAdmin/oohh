@@ -22,7 +22,7 @@ local function get_ip()
 end
 
 try_ip = function(ip)
-	printf("trying ip %q", ip)
+	logf("trying ip %q", ip)
 
 	local socket = luasocket.Client("tcp")
 

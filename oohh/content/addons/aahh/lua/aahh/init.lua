@@ -30,7 +30,7 @@ function aahh.Initialize()
 		end
 		
 		WORLD:SetCursor(1)
-		
+				
 	aahh.World = WORLD
 end
 
@@ -55,13 +55,13 @@ end
 
 aahh.LayoutRequests = {}
 
-dofile("panels.lua")
-dofile("events.lua")
-dofile("skin.lua")
-dofile("util.lua")
+include("panels.lua")
+include("events.lua")
+include("skin.lua")
+include("util.lua")
 
 aahh.Initialize()
 
 event.Call("AahhInitialized")
 
-dofile("unit_test.lua")
+include("unit_test.lua")

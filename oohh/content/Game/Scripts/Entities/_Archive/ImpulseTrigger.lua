@@ -185,10 +185,10 @@ end
 ImpulseTrigger.Inactive =
 {
 	OnBeginState = function( self )
-		printf("ImpulseTrigger deactivating");
+		logf("ImpulseTrigger deactivating");
 	end,
 	OnEndState = function( self )
-		printf("ImpulseTrigger activating");
+		logf("ImpulseTrigger activating");
 	end,
 }
 -------------------------------------------------------------------------------

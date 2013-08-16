@@ -84,7 +84,7 @@ inline void my_setstatename(lua_State *L, const char *key, const char *var)
 inline void my_setplatformname(lua_State *L, const char *name)
 {
 	lua_pushvalue(L, LUA_GLOBALSINDEX);
-		lua_pushstring(L, "MMYY_PLATFORM");
+		lua_pushstring(L, "PLATFORM");
 		lua_pushstring(L, name);
 	lua_settable(L, -3);
 	lua_remove(L, -1);
@@ -92,7 +92,7 @@ inline void my_setplatformname(lua_State *L, const char *name)
 
 inline const char *my_getplatformname(lua_State *L)
 {
-	lua_getglobal(L, "MMYY_PLATFORM");
+	lua_getglobal(L, "PLATFORM");
 
 	auto name = lua_tostring(L, -1);
 	lua_remove(L, -1);

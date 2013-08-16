@@ -29,4 +29,3 @@ event.AddListener("PostGameUpdate", "test", function()
 	render.RenderBegin()
 end)
 
-utilities.MonitorFileInclude()

@@ -49,7 +49,7 @@ local locinfo=function(func)
         local fenv=debug.getfenv(func)
         if fenv then
             if fenv==_G then
-                -- print nothing
+                -- logn nothing
             else
                 local key
                 for k,v in pairs(_G) do
@@ -98,10 +98,10 @@ meta.src=function(f)
 	local src=f:source()
 	if not src:find(".lua",1,true) then return false end
 	
-	src=file.Exists(src) and src
+	src=vfs.Exists(src) and src
 	if not src then return false end
 	
-	src=file.Read(src)
+	src=vfs.Read(src)
 	if not src then return false end
 
 	local info=f:info()

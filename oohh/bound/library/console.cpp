@@ -1,31 +1,31 @@
 #include "StdAfx.h"
 #include "oohh.hpp"
 
-LUALIB_FUNCTION(console, RunString)
+LUALIB_FUNCTION(cryconsole, RunString)
 {
 	gEnv->pConsole->ExecuteString(my->ToString(1), my->ToBoolean(2), my->ToBoolean(3));
 
     return 0;
 }
-LUALIB_FUNCTION(console, FindKeyBind)
+LUALIB_FUNCTION(cryconsole, FindKeyBind)
 {
     my->Push(gEnv->pConsole->FindKeyBind(my->ToString(1)));
 
     return 1;
 }
-LUALIB_FUNCTION(console, Show)
+LUALIB_FUNCTION(cryconsole, Show)
 {
 	gEnv->pConsole->ShowConsole(my->ToBoolean(1), my->ToNumber(2, -1));
 
     return 0;
 }
-LUALIB_FUNCTION(console, IsVisible)
+LUALIB_FUNCTION(cryconsole, IsVisible)
 {
     my->Push(gEnv->pConsole->GetStatus());
 
     return 1;
 }
-LUALIB_FUNCTION(console, GetCVarNumber)
+LUALIB_FUNCTION(cryconsole, GetCVarNumber)
 {
     auto var = gEnv->pConsole->GetCVar(my->ToString(1));
 
@@ -37,7 +37,7 @@ LUALIB_FUNCTION(console, GetCVarNumber)
 
     return 0;
 }
-LUALIB_FUNCTION(console, GetCVarString)
+LUALIB_FUNCTION(cryconsole, GetCVarString)
 {
     auto var = gEnv->pConsole->GetCVar(my->ToString(1));
 
@@ -49,7 +49,7 @@ LUALIB_FUNCTION(console, GetCVarString)
 
     return 0;
 }
-LUALIB_FUNCTION(console, SetCVarValue)
+LUALIB_FUNCTION(cryconsole, SetCVarValue)
 {
     auto var = gEnv->pConsole->GetCVar(my->ToString(1));
 
@@ -61,7 +61,7 @@ LUALIB_FUNCTION(console, SetCVarValue)
     return 0;
 }
 
-LUALIB_FUNCTION(console, SetCVarFlag)
+LUALIB_FUNCTION(cryconsole, SetCVarFlag)
 {
     auto var = gEnv->pConsole->GetCVar(my->ToString(1));
 
@@ -73,7 +73,7 @@ LUALIB_FUNCTION(console, SetCVarFlag)
     return 0;
 }
 
-LUALIB_FUNCTION(console, GetCVarFlag)
+LUALIB_FUNCTION(cryconsole, GetCVarFlag)
 {
     auto var = gEnv->pConsole->GetCVar(my->ToString(1));
 
@@ -87,7 +87,7 @@ LUALIB_FUNCTION(console, GetCVarFlag)
     return 0;
 }
 
-LUALIB_FUNCTION(console, RemoveCVarFlags)
+LUALIB_FUNCTION(cryconsole, RemoveCVarFlags)
 {
     auto var = gEnv->pConsole->GetCVar(my->ToString(1));
 
@@ -106,7 +106,7 @@ void CMD_OnCommand(IConsoleCmdArgs *args)
 	my->CallHook("LuaCommand", args->GetCommandLine());
 }
 
-LUALIB_FUNCTION(console, AddInternalConsoleCommand)
+LUALIB_FUNCTION(cryconsole, AddInternalConsoleCommand)
 {
 	auto str = my->ToString(1);
 
@@ -116,14 +116,14 @@ LUALIB_FUNCTION(console, AddInternalConsoleCommand)
     return 0;
 }
 
-LUALIB_FUNCTION(console, RemoveInternalConsoleCommand)
+LUALIB_FUNCTION(cryconsole, RemoveInternalConsoleCommand)
 {    
 	gEnv->pConsole->RemoveCommand(my->ToString(1));
 
 	return 0;
 }
 
-LUALIB_FUNCTION(console, AddInternalCommandToHistory)
+LUALIB_FUNCTION(cryconsole, AddInternalCommandToHistory)
 {
 	auto str = my->ToString(1);
 
