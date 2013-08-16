@@ -22,8 +22,8 @@ goto again
 :premake
 	cd %~dp0premake
 	
-	premake4 codeblocks
 	premake4 vs2010
+	premake4 vs2012
 	
 	pause
 :end
