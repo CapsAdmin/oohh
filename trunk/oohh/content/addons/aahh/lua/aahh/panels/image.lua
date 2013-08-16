@@ -2,7 +2,7 @@ local PANEL = {}
 
 PANEL.ClassName = "image"
 
-aahh.GetSet(PANEL, "Texture", Texture(Path("textures/aahh/c.dds")))
+aahh.GetSet(PANEL, "Texture", Texture(R"textures/aahh/c.dds"))
 aahh.GetSet(PANEL, "UV")
 aahh.GetSet(PANEL, "Color")
 aahh.GetSet(PANEL, "Scale", Vec2(1,1))

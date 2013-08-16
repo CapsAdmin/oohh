@@ -1129,4 +1129,4 @@ do -- meta
 	aahh.RegisterPanel(PANEL)
 end
 
-dofile("panels/*")
+for path in vfs.Iterate("lua/aahh/panels/", nil, true) do include(path) end

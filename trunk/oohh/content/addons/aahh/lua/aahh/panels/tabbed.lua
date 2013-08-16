@@ -12,7 +12,7 @@ function PANEL:Initialize()
 	self.lbl:SetIgnoreMouse(true)
 		
 	self.img = aahh.Create("image", self)
-	self.img:SetTexture(Texture(Path("textures/gui/heart.png")))
+	self.img:SetTexture(Texture(R("textures/gui/heart.png")))
 	self.img:SetIgnoreMouse(true)
 
 	self:SetCursor(e.IDC_HAND)

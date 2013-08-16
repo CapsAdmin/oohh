@@ -29,7 +29,7 @@ function PlayBinaryFile(path, rate, pos)
 	local W = 0
 	local POS = 0
 		
-	local data = file.Read(path, "b")
+	local data = vfs.Read(path, "b")
 	
 	print(#data)
 		
@@ -104,4 +104,4 @@ function PlayBinaryFile(path, rate, pos)
 end
 
 PlayBinaryFile("bin32/editor.exe")
-utilities.MonitorFileInclude()
+

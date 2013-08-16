@@ -38,4 +38,3 @@ event.AddListener("PostGameUpdate", "rt_test", function()
 	graphics.DrawTexture(rt, Rect(x,y,256,256), Color(1,1,1,1))
 end)
 
-utilities.MonitorFileInclude()

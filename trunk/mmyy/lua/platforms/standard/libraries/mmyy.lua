@@ -1,16 +1,30 @@
 local mmyy = _G.mmyy or {}
 
-if WINDOWS then
-	ffi.cdef("int SetConsoleTitleA(const char* blah);")
+do -- title
+	local set_title
+	if WINDOWS then
+		ffi.cdef("int SetConsoleTitleA(const char* blah);")
 
-	function mmyy.SetWindowTitle(...)
-		return ffi.C.SetConsoleTitleA(...)
+		set_title = function(str)
+			return ffi.C.SetConsoleTitleA(str)
+		end
 	end
-end
 
-if LINUX then
-	function mmyy.SetWindowTitle(title)
-		return io.write('-ne "\033]0;'..title..'\007"')
+	if LINUX then
+		set_title = function(str)
+			return io.old_write and io.old_write('\27]0;', str, '\7') or nil
+		end
+	end
+	
+	local titles = {}
+	
+	function mmyy.SetWindowTitle(title, id)
+		if id then
+			titles[id] = title
+			set_title(table.concat(titles, " | "))
+		else
+			set_title(title)
+		end
 	end
 end
 
@@ -42,7 +56,7 @@ function mmyy.CreateLuaEnvironment(title, globals, id)
 		
 	globals = globals or {}
 	
-	globals.MMYY_PLATFORM = _G.MMYY_PLATFORM or globals.MMYY_PLATFORM
+	globals.PLATFORM = _G.PLATFORM or globals.PLATFORM
 	globals.PORT = socket:GetPort()
 	globals.CREATED_ENV = true
 	globals.TITLE = tostring(title)
@@ -52,8 +66,8 @@ function mmyy.CreateLuaEnvironment(title, globals, id)
 	end	
 	
 	arg = arg:gsub([["]], [[']])	
-	arg = ([[-e %sloadfile('%sinit.lua')()]]):format(arg, e.LUA_FOLDER)
-	
+	arg = ([[-e %sloadfile('%sinit.lua')()]]):format(arg, e.BASE_FOLDER .. "lua/")
+		
 	if WINDOWS then
 		os.execute([[start "" "luajit" "]] .. arg .. [["]])
 	elseif LINUX then
@@ -65,12 +79,12 @@ function mmyy.CreateLuaEnvironment(title, globals, id)
 	function env:OnReceive(line)
 		local func, msg = loadstring(line)
 		if func then
-			local ok, msg = pcall(func) 
+			local ok, msg = xpcall(func, OnError) 
 			if not ok then
-				print("runtime error:", client, msg)
+				logn("runtime error:", client, msg)
 			end
 		else
-			print("compile error:", client, msg)
+			logn("compile error:", client, msg)
 		end
 	end
 	
@@ -109,17 +123,19 @@ function mmyy.CreateLuaEnvironment(title, globals, id)
 end
 
 function mmyy.CreateConsole(title)
+	if CONSOLE then return logn("tried to create a console in a console!!!") end
 	local env = mmyy.CreateLuaEnvironment(title, {CONSOLE = true})
 	
 	env:Send([[
 		local __stop__
 		
 		local function clear() 
-			print(("\n"):rep(1000)) -- lol
+			logn(("\n"):rep(1000)) -- lol
 		end
 				
 		local function exit()
 			__stop__ = true
+			os.exit()
 		end
 		
 		clear()
@@ -136,7 +152,7 @@ function mmyy.CreateConsole(title)
 			elseif str == "clear" then
 				clear()
 			end
-						
+
 			if str and #str:trim() > 0 then
 				ENV_SOCKET:Send(str, true)
 			else
@@ -151,7 +167,7 @@ function mmyy.CreateConsole(title)
 		
 	event.AddListener("OnPrint", title .. "_console_output", function(...)
 		local line = tostring_args(...)
-		env:Send(string.format("print(%q)", line))
+		env:Send(string.format("logn(%q)", line))
 	end)
 	
 		

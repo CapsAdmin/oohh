@@ -1,4 +1,4 @@
-utilities.MonitorFileInclude()
+
 
 polyphony = polyphony or {}
 
@@ -133,7 +133,7 @@ if CLIENT then
 		message.Send("polyphony", instrument, key, pitch, volume, timestamp)
 	end
 
-	message.Hook("polyphony", function(ply, instrument, key, pitch, volume, timestamp)
+	message.AddListener("polyphony", function(ply, instrument, key, pitch, volume, timestamp)
 		if ply:IsValid() then
 			polyphony.ModifyVoice(ply, instrument, key, pitch, volume, timestamp)
 		end
@@ -141,7 +141,7 @@ if CLIENT then
 end
 
 if SERVER then
-	message.Hook("polyphony", function(ply, instrument, key, pitch, volume, timestamp)
+	message.AddListener("polyphony", function(ply, instrument, key, pitch, volume, timestamp)
 		if ply:IsValid() then
 			message.Send("polyphony", message.PlayerFilter():AddAllExcept(ply), ply, instrument, key, pitch, volume, timestamp)
 			--print(ply, instrument, key, pitch, volume, timestamp)

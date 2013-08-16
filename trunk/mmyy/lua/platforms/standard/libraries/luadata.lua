@@ -86,6 +86,8 @@ function luadata.Encode(tbl, __brackets)
 	end
 
 	str = str .. ("\t"):rep(tab-1) .. (__brackets and "}" or "")
+	
+	str = str .. "\n"
 
 	return str
 end
@@ -96,31 +98,31 @@ function luadata.Decode(str)
 	local func = loadstring("return {\n" .. str .. "\n}")
 	
 	if type(func) == "string" then
-		print("luadata decode error:")
-		print(err)
+		logn("luadata decode error:")
+		logn(err)
 		
 		return {}
 	end
 	
-	local ok, err = pcall(func)
+	local ok, err = xpcall(func, OnError)
 	
 	if not ok then
-		print("luadata decode error:")
-		print(err)
+		logn("luadata decode error:")
+		logn(err)
 		return {}
 	end
 	
 	return err
 end
 
-do -- file extension
+do -- vfs extension
 
 	function luadata.WriteFile(path, tbl, ...)
-		file.Write(path, luadata.Encode(tbl), ...)
+		vfs.Write(path, luadata.Encode(tbl), ...)
 	end
 
 	function luadata.ReadFile(path, ...)
-		return luadata.Decode(file.Read(path, ...))
+		return luadata.Decode(vfs.Read(path, ...))
 	end
 
 	function luadata.SetKeyValueInFile(path, key, value)

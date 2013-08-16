@@ -976,7 +976,7 @@ function PANEL:DrawLine(line)
 	end
 end
 
-local testfont = Font(Path("fonts/tahoma.ttf"))
+local testfont = Font(R"fonts/tahoma.ttf")
 
 function PANEL:DrawText(element)
 	

@@ -1,11 +1,11 @@
-utilities.MonitorFileInclude()
+
 
 local m = hllib.module
 
 function TexturePNG(path)
 	path = path:match(".-%.%./(.+)") -- uggghh FIX THI
 	
-	local data = file.Read(path, "b")
+	local data = vfs.Read(path, "b")
 	
 	local w, h = 16, 16
 	
@@ -28,5 +28,5 @@ local frm = utilities.RemoveOldObject(aahh.Create("frame"))
 	frm:Dock("center")
 	
 local pnl = frm:CreatePanel("image")
-	pnl:SetTexture(TexturePNG(Path("textures/gui/heart.png")))
+	pnl:SetTexture(TexturePNG(R("textures/gui/heart.png")))
 	pnl:Dock("fill")

@@ -76,4 +76,4 @@ do -- skins
 	end
 end
 
-dofile("skins/*")
+for path in vfs.Iterate("lua/aahh/skins/", nil, true) do include(path) end

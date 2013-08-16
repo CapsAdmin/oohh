@@ -15,7 +15,7 @@ end
 
 function aahh.EndDraw(pnl)	
 	if aahh.debug then 
-		white = white or Texture(Path("textures/defaults/white.dds")):GetId() -- ugh
+		white = white or Texture(R("textures/defaults/white.dds")):GetId() -- ugh
 
 		local siz = pnl:GetSize()
 		
@@ -40,6 +40,7 @@ function aahh.Draw(delta)
 		aahh.ActiveSkin.FT = delta
 		aahh.ActiveSkin:Think(delta)
 	end
+	
 	if aahh.World:IsValid() then
 		aahh.World:Draw()
 	end
@@ -145,7 +146,5 @@ if CRYENGINE3 then
 	function aahh.CharInput(key, press)
 		return aahh.CallEvent(aahh.World, "CharInput", key, press)
 	end
-	event.AddListener("OnCharInput", "aahh", aahh.CharInput, nospam_print)
-	
-	utilities.MonitorFileInclude()
+	event.AddListener("OnCharInput", "aahh", aahh.CharInput, nospam_print)	
 end

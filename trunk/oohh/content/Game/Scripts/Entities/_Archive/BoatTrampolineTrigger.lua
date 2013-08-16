@@ -278,10 +278,10 @@ end
 BoatTrampolineTrigger.Inactive =
 {
 	OnBeginState = function( self )
-		printf("BoatTrampolineTrigger deactivating");
+		logf("BoatTrampolineTrigger deactivating");
 	end,
 	OnEndState = function( self )
-		printf("BoatTrampolineTrigger activating");
+		logf("BoatTrampolineTrigger activating");
 	end,
 }
 -------------------------------------------------------------------------------

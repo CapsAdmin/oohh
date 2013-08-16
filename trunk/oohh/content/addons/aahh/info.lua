@@ -8,5 +8,5 @@ return
 	
 	priority = 10,
 
-	load = CRYENGINE3 ~= nil,
+	load = e.PLATFORM == "CRYENGINE3",
 }

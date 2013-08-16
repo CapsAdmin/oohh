@@ -135,7 +135,7 @@ function timer.Update()
 					obj:SetNextThink(msg)
 				end
 			else
-				print(id, msg)
+				logn(id, msg)
 			end
 
 			if obj.times_ran == obj.repeats then
@@ -146,7 +146,7 @@ function timer.Update()
 			end
 		end
 	end
-
+	
 	for key, data in ipairs(timer.Thinkers) do	
 		if data.speed then
 			for i=0, data.speed do

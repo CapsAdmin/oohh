@@ -19,7 +19,7 @@ function GameEvent:OnShutDown()
 end
 
 function GameEvent:Event_Save(sender)
-	--printf("CHECKPOINT REACHED: "..self.Properties.nId);
+	--logf("CHECKPOINT REACHED: "..self.Properties.nId);
 	--if sender~=nil then
 	    --System.RemoveEntity(sender.id);
 	--end

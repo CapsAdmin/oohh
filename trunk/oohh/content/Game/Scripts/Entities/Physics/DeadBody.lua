@@ -112,7 +112,7 @@ end
 
 -----------------------------------------------------------------------------------------------------------
 function DeadBody:Server_OnDamageDead( hit )
---printf("server on Damage DEAD %.2f %.2f",hit.impact_force_mul_final,hit.impact_force_mul);
+--logf("server on Damage DEAD %.2f %.2f",hit.impact_force_mul_final,hit.impact_force_mul);
   --System.Log("DeadBody hit part "..hit.ipart);
 	if( hit.ipart ) then
 		self:AddImpulse( hit.ipart, hit.pos, hit.dir, hit.impact_force_mul );
