@@ -1,0 +1,1 @@
+some sort of multiplayer lua sandbox using the free cryenigne 3 sdk aimed mostly towards lua developers on gmod that play on metastruct (our gmod server) but also to serve as reference for lua binding and how to do game specific development using mostly lua. could also be used to see how to work with the cryengine 3
